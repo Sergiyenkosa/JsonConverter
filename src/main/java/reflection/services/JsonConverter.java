@@ -2,12 +2,10 @@ package reflection.services;
 
 import reflection.annotations.CustomDateFormat;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,10 +20,15 @@ public class JsonConverter {
             return "";
         }
         else if (o instanceof String) {
-            return  "\"" + convertToJsonString(o.toString()) + "\"";
+            return  convertToJsonString(o.toString());
         }
         else if (o instanceof Boolean || o instanceof Character || o instanceof Number) {
-            return o instanceof Character ? "'" + convertToJsonString(o.toString()) + "'" : o.toString();
+            return o instanceof Character ?
+                    convertToJsonString(o.toString()).replaceAll("^\"", "'").replaceAll("\"$", "'") :
+                    "'" + o.toString() + "'";
+        }
+        else if (o.getClass().isArray()) {
+            return convertToJsonArray(o);
         }
         else if (o instanceof LocalDate){
             return "\"" + o.toString() + "\"";
@@ -33,14 +36,15 @@ public class JsonConverter {
         else {
             o.getClass().getConstructor();//check for default constructor
 
-            return "{" + convertToJsonObject(o) + "\n}";
+            return convertToJsonObject(o);
         }
     }
 
     public static Object fromJson(String json, Class<?> clazz)
             throws IllegalAccessException, InstantiationException,
             NoSuchMethodException, InvocationTargetException {
-        json = json.replaceAll("^(\"|\'|\\{)", "").replaceAll("(\"|\'|\\})$", "");
+
+        json = json.replaceAll("^(\"|\'|\\[|\\{)", "").replaceAll("(\"|\'|\\]|\\})$", "");
 
         if (clazz == String.class) {
             return convertToOriginalString(json);
@@ -50,6 +54,9 @@ public class JsonConverter {
                 json = convertToOriginalString(json);
 
             return convertToOriginalPrimitiveOrWrapper(json, clazz);
+        }
+        else if (clazz.isArray()) {
+            return convertToOriginalArray(json, clazz.getComponentType());
         }
         else if (clazz == LocalDate.class) {
             return LocalDate.parse(json);
@@ -62,19 +69,22 @@ public class JsonConverter {
     }
 
     private static String convertToJsonString(String originalString) {
-        return originalString.replaceAll("\\\\", "\\\\\\\\").
-                replaceAll("\"", "\\\\\"").replaceAll("\b", "\\\\b").
-                replaceAll("\n", "\\\\n").replaceAll("\t", "\\\\t").
-                replaceAll("\r", "\\\\r");
+        return "\"" + originalString.replaceAll("\\\\", "\\\\\\\\").
+                replaceAll("\"", "\\\\\"").replaceAll("/", "\\\\/").
+                replaceAll("\b", "\\\\b").replaceAll("\f", "\\\\f").
+                replaceAll("\n", "\\\\n").replaceAll("\r", "\\\\r").
+                replaceAll("\t", "\\\\t") + "\"";
     }
 
     private static String convertToOriginalString(String jsonString) {
         Map<String, String> charsMap = new HashMap<>();
-        charsMap.put("b", "\b");
-        charsMap.put("n", "\n");
-        charsMap.put("t", "\t");
-        charsMap.put("r", "\r");
         charsMap.put("\"", "\"");
+        charsMap.put("/", "/");
+        charsMap.put("b", "\b");
+        charsMap.put("f", "\f");
+        charsMap.put("n", "\n");
+        charsMap.put("r", "\r");
+        charsMap.put("t", "\t");
 
         for (Map.Entry<String, String> entry : charsMap.entrySet()) {
             Pattern p = Pattern.compile("(^|^.*[^\\\\])(\\\\{2})*\\\\"+entry.getKey());//it was 4:51am :)
@@ -112,7 +122,7 @@ public class JsonConverter {
     }
 
     private static String convertToJsonObject(Object o) throws NoSuchMethodException, IllegalAccessException {
-        String jsonResult = "";
+        String jsonResult = "{";
 
         for (Map.Entry<String, Field> entry : FieldsHandler.getDeclaredFieldsMap(o).entrySet()) {
             Field field = entry.getValue();
@@ -120,7 +130,7 @@ public class JsonConverter {
 
             if (objectValue != null && (field.getModifiers() & STATIC) != STATIC &&
                     !field.getType().isInterface() && !field.getType().isAnonymousClass() &&
-                    !field.getType().isMemberClass() && !field.getType().isArray()) {
+                    !field.getType().isMemberClass()) {
                 String stringValue;
                 CustomDateFormat customDateFormat;
 
@@ -132,14 +142,14 @@ public class JsonConverter {
                     stringValue = "\"" + customLocalDate + "\"";
                 }
                 else {
-                    stringValue = toJson(objectValue).replace("\n\t", "\n\t\t").replace("\n}", "\n\t}");
+                    stringValue = toJson(objectValue).replace("\n\t", "\n\t\t").replace("\n}", "\n\t}").replace("\n]", "\n\t]");
                 }
 
                 jsonResult += String.format("\n\t\"%s\": %s,", entry.getKey(), stringValue);
             }
         }
 
-        return jsonResult.endsWith(",") ? jsonResult.substring(0, jsonResult.length()-1) : jsonResult;
+        return jsonResult.endsWith(",") ? jsonResult.substring(0, jsonResult.length()-1) + "\n}" : jsonResult + "\n}";
     }
 
     private static Object convertToOriginalJsonObject(String json, Object instance)
@@ -172,5 +182,51 @@ public class JsonConverter {
         else {
             return instance;
         }
+    }
+
+    private static String convertToJsonArray(Object o) throws NoSuchMethodException, IllegalAccessException {
+        String jsonResult = "[";
+
+        for (int i = 0;i < Array.getLength(o); i++) {
+            String insert = toJson(Array.get(o, i));
+
+            jsonResult += "\n\t" + insert.replace("\n\t", "\n\t\t").replace("\n]", "\n\t]").replace("\n}", "\n\t}") + ",";
+        }
+
+        return jsonResult.endsWith(",") ? jsonResult.substring(0, jsonResult.length()-1) + "\n]": jsonResult + "\n]";
+    }
+
+    private static Object convertToOriginalArray(String json, Class<?> type)
+            throws IllegalAccessException, NoSuchMethodException,
+            InstantiationException, InvocationTargetException {
+
+        if (json.length() > 1)
+            json = json.substring(2, json.length()-1).replaceAll("\n\t", "\n");
+        else
+            return Array.newInstance(type, 0);
+
+        String[] stringValues;
+
+        if (type.isArray()) {
+            stringValues = json.split("(\\],\n\\[)");
+        }
+        else {
+            json = json.startsWith(",\n") ? " " + json : json;
+            json = json.endsWith(",\n") ? json + " " : json;
+
+            stringValues = json.split(",\n(?=[^\t])");//it was 2:26am :)
+        }
+
+        Object instance = Array.newInstance(type, stringValues.length);
+
+        for (int i = 0; i < stringValues.length; i++) {
+            String stringValue = stringValues[i];
+
+            if (!stringValue.equals("") && !stringValue.equals(" ")){
+                Array.set(instance, i, fromJson(stringValue, type));
+            }
+        }
+
+        return instance;
     }
 }

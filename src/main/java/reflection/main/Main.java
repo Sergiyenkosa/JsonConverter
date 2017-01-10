@@ -5,7 +5,7 @@ import reflection.exceptions.TheSameFieldAndJsonValueNamesInDifferentFieldsExcep
 import reflection.services.JsonConverter;
 
 import java.time.LocalDate;
-import java.util.Date;
+import java.util.*;
 
 
 /**
@@ -49,7 +49,7 @@ public class Main {
         merge2.setPrimitiveWrappers(primitiveWrappers);
 
         Strings strings = new Strings();
-        strings.setString1("assgsg\"\"'}\\$\n\n\n\\\\\b");
+        strings.setString1("ass//gs\fg\"\"'}\\$\n\n\n\\\\\b");
         strings.setString3("dfgdfg\n\b\r\txxdfg");
 
         Nulls nulls = new Nulls();
@@ -58,28 +58,90 @@ public class Main {
         merge3.setStrings(strings);
         merge3.setNulls(nulls);
 
-        merge1.setMerge2(merge2);
         merge2.setMerge3(merge3);
 
-        String jsonMarge = JsonConverter.toJson(merge1);
+        merge1.setMerge2(merge2);
 
-        System.out.println("jsonMarge == \n" + jsonMarge);
+        DifferentArrays differentArrays = new DifferentArrays();
+
+        Merge2[] objectMerge2s = new Merge2[1];
+        objectMerge2s[0] = merge2;
+
+        Merge3[][] objectMerge3s = new Merge3[1][2];
+        objectMerge3s[0][0] = merge3;
+        objectMerge3s[0][1] = merge3;
+
+        LocalDate[][][] objectLocaleDates = new LocalDate[1][2][3];
+        objectLocaleDates[0][0][0] = LocalDate.MIN;
+
+        String[] strings1 = new String[2];
+        strings1[1] = "fsdfasdg/\\\\\\";
+
+        String[][] strings2 = new String[2][1];
+        strings2[1][0] = "\"fgsgergergw3fg\f\"";
+
+        int[] primitiveInts = new int[3];
+        primitiveInts[2] = Integer.MIN_VALUE;
+
+        float[][] primitiveFloats = new float[3][2];
+        primitiveFloats[2][1] = Float.MIN_VALUE;
+        primitiveFloats[1][0] = Float.MAX_VALUE;
+
+        char[][][] primitiveChars = new char[3][2][1];
+        primitiveChars[0][0][0] = 'a';
+        primitiveChars[1][1][0] = 'b';
+        primitiveChars[2][1][0] = 'c';
+
+        boolean[][][][] primitivesBoolean = new boolean[4][3][2][1];
+        primitivesBoolean[2][2][1][0] = true;
+
+        Long[][][][] wrapperLongs = new Long[3][3][3][3];
+        wrapperLongs[2][2][2][2] = Long.MIN_VALUE;
+
+        Double[][][] wrapperDoubles = new Double[5][5][5];
+        wrapperDoubles[0][0][0] = Double.MIN_VALUE;
+        wrapperDoubles[2][2][2] = 0.0;
+        wrapperDoubles[4][4][4] = Double.MAX_VALUE;
+
+        Character[][] wrapperCharacters = new Character[1][3];
+        wrapperCharacters[0][2] = '1';
+
+        Boolean [] wrapperBooleans = new Boolean[3];
+        wrapperBooleans[1] = false;
+
+        Object [][][] emptyArray = new Object[0][1][2];
+
+        differentArrays.setObjectMerge2s(objectMerge2s);
+        differentArrays.setObjectMerge3s(objectMerge3s);
+        differentArrays.setObjectLocaleDates(objectLocaleDates);
+        differentArrays.setStrings1(strings1);
+        differentArrays.setStrings2(strings2);
+        differentArrays.setPrimitiveInts(primitiveInts);
+        differentArrays.setPrimitiveFloats(primitiveFloats);
+        differentArrays.setPrimitiveChars(primitiveChars);
+        differentArrays.setPrimitivesBoolean(primitivesBoolean);
+        differentArrays.setWrapperLongs(wrapperLongs);
+        differentArrays.setWrapperDoubles(wrapperDoubles);
+        differentArrays.setWrapperBooleans(wrapperBooleans);
+        differentArrays.setEmptyArray(emptyArray);
+
+        merge1.setDifferentArrays(differentArrays);
+
+        String jsonMarge = JsonConverter.toJson(merge1);
+        System.out.println("_________________________ jsonMarge == _________________________\n" + jsonMarge);
 
         Merge1 margeCopy = (Merge1) JsonConverter.fromJson(jsonMarge, Merge1.class);
-
         String jsonMargeCopy = JsonConverter.toJson(margeCopy);
+        System.out.println("_________________________ jsonMargeCopy == _________________________\n" + jsonMargeCopy);
 
-        System.out.println("jsonMargeCopy == \n" + jsonMargeCopy);
-
-        System.out.println("Equals jsonMarge & jsonMargeCopy = " + jsonMarge.equals(jsonMargeCopy) + "!!! :)");
+        System.out.println("___ Equals jsonMarge & jsonMargeCopy == " + jsonMarge.equals(jsonMargeCopy) + "!!! :) ___");
 
         TheSameNames theSameNames = new TheSameNames();
-
         try {
             JsonConverter.toJson(theSameNames);
         }
         catch (TheSameFieldAndJsonValueNamesInDifferentFieldsException e) {
-            System.out.println("Checking exception: " + e);
+            System.out.println("___ Check exception == " + e + " ___");
         }
     }
 }

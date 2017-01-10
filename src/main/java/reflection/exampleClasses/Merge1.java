@@ -7,6 +7,7 @@ public class Merge1 {
     private DateAndLocalDate dateAndLocalDate;
     private Empty empty;
     private Merge2 merge2;
+    private DifferentArrays differentArrays;
 
     public DateAndLocalDate getDateAndLocalDate() {
         return dateAndLocalDate;
@@ -30,5 +31,13 @@ public class Merge1 {
 
     public void setMerge2(Merge2 merge2) {
         this.merge2 = merge2;
+    }
+
+    public DifferentArrays getDifferentArrays() {
+        return differentArrays;
+    }
+
+    public void setDifferentArrays(DifferentArrays differentArrays) {
+        this.differentArrays = differentArrays;
     }
 }
