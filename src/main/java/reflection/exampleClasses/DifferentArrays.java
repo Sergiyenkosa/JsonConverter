@@ -1,6 +1,7 @@
 package reflection.exampleClasses;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 
 /**
  * Created by Sergiy on 10.01.2017.
@@ -131,5 +132,50 @@ public class DifferentArrays {
 
     public void setEmptyArray(Object[][][] emptyArray) {
         this.emptyArray = emptyArray;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DifferentArrays that = (DifferentArrays) o;
+
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(objectMerge2s, that.objectMerge2s)) return false;
+        if (!Arrays.deepEquals(objectMerge3s, that.objectMerge3s)) return false;
+        if (!Arrays.deepEquals(objectLocaleDates, that.objectLocaleDates)) return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(strings1, that.strings1)) return false;
+        if (!Arrays.deepEquals(strings2, that.strings2)) return false;
+        if (!Arrays.equals(primitiveInts, that.primitiveInts)) return false;
+        if (!Arrays.deepEquals(primitiveFloats, that.primitiveFloats)) return false;
+        if (!Arrays.deepEquals(primitiveChars, that.primitiveChars)) return false;
+        if (!Arrays.deepEquals(primitivesBoolean, that.primitivesBoolean)) return false;
+        if (!Arrays.deepEquals(wrapperLongs, that.wrapperLongs)) return false;
+        if (!Arrays.deepEquals(wrapperDoubles, that.wrapperDoubles)) return false;
+        if (!Arrays.deepEquals(wrapperCharacters, that.wrapperCharacters)) return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(wrapperBooleans, that.wrapperBooleans)) return false;
+        return Arrays.deepEquals(emptyArray, that.emptyArray);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.hashCode(objectMerge2s);
+        result = 31 * result + Arrays.deepHashCode(objectMerge3s);
+        result = 31 * result + Arrays.deepHashCode(objectLocaleDates);
+        result = 31 * result + Arrays.hashCode(strings1);
+        result = 31 * result + Arrays.deepHashCode(strings2);
+        result = 31 * result + Arrays.hashCode(primitiveInts);
+        result = 31 * result + Arrays.deepHashCode(primitiveFloats);
+        result = 31 * result + Arrays.deepHashCode(primitiveChars);
+        result = 31 * result + Arrays.deepHashCode(primitivesBoolean);
+        result = 31 * result + Arrays.deepHashCode(wrapperLongs);
+        result = 31 * result + Arrays.deepHashCode(wrapperDoubles);
+        result = 31 * result + Arrays.deepHashCode(wrapperCharacters);
+        result = 31 * result + Arrays.hashCode(wrapperBooleans);
+        result = 31 * result + Arrays.deepHashCode(emptyArray);
+        return result;
     }
 }

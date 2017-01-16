@@ -40,4 +40,27 @@ public class Merge1 {
     public void setDifferentArrays(DifferentArrays differentArrays) {
         this.differentArrays = differentArrays;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Merge1 merge1 = (Merge1) o;
+
+        if (dateAndLocalDate != null ? !dateAndLocalDate.equals(merge1.dateAndLocalDate) : merge1.dateAndLocalDate != null)
+            return false;
+        if (empty != null ? !empty.equals(merge1.empty) : merge1.empty != null) return false;
+        if (merge2 != null ? !merge2.equals(merge1.merge2) : merge1.merge2 != null) return false;
+        return differentArrays != null ? differentArrays.equals(merge1.differentArrays) : merge1.differentArrays == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = dateAndLocalDate != null ? dateAndLocalDate.hashCode() : 0;
+        result = 31 * result + (empty != null ? empty.hashCode() : 0);
+        result = 31 * result + (merge2 != null ? merge2.hashCode() : 0);
+        result = 31 * result + (differentArrays != null ? differentArrays.hashCode() : 0);
+        return result;
+    }
 }

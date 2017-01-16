@@ -76,4 +76,37 @@ public class Primitives {
     public void setPrimitiveDouble(double primitiveDouble) {
         this.primitiveDouble = primitiveDouble;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Primitives that = (Primitives) o;
+
+        if (primitiveBoolean != that.primitiveBoolean) return false;
+        if (primitiveChar != that.primitiveChar) return false;
+        if (primitiveByte != that.primitiveByte) return false;
+        if (primitiveShort != that.primitiveShort) return false;
+        if (primitiveInt != that.primitiveInt) return false;
+        if (primitiveLong != that.primitiveLong) return false;
+        if (Float.compare(that.primitiveFloat, primitiveFloat) != 0) return false;
+        return Double.compare(that.primitiveDouble, primitiveDouble) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        result = (primitiveBoolean ? 1 : 0);
+        result = 31 * result + (int) primitiveChar;
+        result = 31 * result + (int) primitiveByte;
+        result = 31 * result + (int) primitiveShort;
+        result = 31 * result + primitiveInt;
+        result = 31 * result + (int) (primitiveLong ^ (primitiveLong >>> 32));
+        result = 31 * result + (primitiveFloat != +0.0f ? Float.floatToIntBits(primitiveFloat) : 0);
+        temp = Double.doubleToLongBits(primitiveDouble);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        return result;
+    }
 }

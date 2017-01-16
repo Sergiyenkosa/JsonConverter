@@ -39,4 +39,24 @@ public class DateAndLocalDate {
     public void setDate(Date date) {
         this.date = date;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DateAndLocalDate that = (DateAndLocalDate) o;
+
+        if (ld1 != null ? !ld1.equals(that.ld1) : that.ld1 != null) return false;
+        if (ld2 != null ? !ld2.equals(that.ld2) : that.ld2 != null) return false;
+        return date != null ? date.equals(that.date) : that.date == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = ld1 != null ? ld1.hashCode() : 0;
+        result = 31 * result + (ld2 != null ? ld2.hashCode() : 0);
+        result = 31 * result + (date != null ? date.hashCode() : 0);
+        return result;
+    }
 }

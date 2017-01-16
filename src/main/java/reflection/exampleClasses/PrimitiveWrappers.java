@@ -76,4 +76,35 @@ public class PrimitiveWrappers {
     public void setWrapperDouble(Double wrapperDouble) {
         this.wrapperDouble = wrapperDouble;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PrimitiveWrappers that = (PrimitiveWrappers) o;
+
+        if (wrapperBoolean != null ? !wrapperBoolean.equals(that.wrapperBoolean) : that.wrapperBoolean != null)
+            return false;
+        if (wrapperChar != null ? !wrapperChar.equals(that.wrapperChar) : that.wrapperChar != null) return false;
+        if (wrapperByte != null ? !wrapperByte.equals(that.wrapperByte) : that.wrapperByte != null) return false;
+        if (wrapperShort != null ? !wrapperShort.equals(that.wrapperShort) : that.wrapperShort != null) return false;
+        if (wrapperInt != null ? !wrapperInt.equals(that.wrapperInt) : that.wrapperInt != null) return false;
+        if (wrapperLong != null ? !wrapperLong.equals(that.wrapperLong) : that.wrapperLong != null) return false;
+        if (wrapperFloat != null ? !wrapperFloat.equals(that.wrapperFloat) : that.wrapperFloat != null) return false;
+        return wrapperDouble != null ? wrapperDouble.equals(that.wrapperDouble) : that.wrapperDouble == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = wrapperBoolean != null ? wrapperBoolean.hashCode() : 0;
+        result = 31 * result + (wrapperChar != null ? wrapperChar.hashCode() : 0);
+        result = 31 * result + (wrapperByte != null ? wrapperByte.hashCode() : 0);
+        result = 31 * result + (wrapperShort != null ? wrapperShort.hashCode() : 0);
+        result = 31 * result + (wrapperInt != null ? wrapperInt.hashCode() : 0);
+        result = 31 * result + (wrapperLong != null ? wrapperLong.hashCode() : 0);
+        result = 31 * result + (wrapperFloat != null ? wrapperFloat.hashCode() : 0);
+        result = 31 * result + (wrapperDouble != null ? wrapperDouble.hashCode() : 0);
+        return result;
+    }
 }

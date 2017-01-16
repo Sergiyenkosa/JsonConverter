@@ -24,8 +24,7 @@ public class JsonConverter {
         }
         else if (o instanceof Boolean || o instanceof Character || o instanceof Number) {
             return o instanceof Character ?
-                    convertToJsonString(o.toString()).replaceAll("^\"", "'").replaceAll("\"$", "'") :
-                    "'" + o.toString() + "'";
+                    convertToJsonString(o.toString()).replaceAll("^\"", "'").replaceAll("\"$", "'") : o.toString();
         }
         else if (o.getClass().isArray()) {
             return convertToJsonArray(o);
@@ -43,7 +42,6 @@ public class JsonConverter {
     public static Object fromJson(String json, Class<?> clazz)
             throws IllegalAccessException, InstantiationException,
             NoSuchMethodException, InvocationTargetException {
-
         json = json.replaceAll("^(\"|\'|\\[|\\{)", "").replaceAll("(\"|\'|\\]|\\})$", "");
 
         if (clazz == String.class) {
@@ -176,12 +174,9 @@ public class JsonConverter {
                     field.set(instance, fromJson(fieldValue, field.getType()));
                 }
             }
+        }
 
-            return instance;
-        }
-        else {
-            return instance;
-        }
+        return instance;
     }
 
     private static String convertToJsonArray(Object o) throws NoSuchMethodException, IllegalAccessException {
@@ -189,6 +184,7 @@ public class JsonConverter {
 
         for (int i = 0;i < Array.getLength(o); i++) {
             String insert = toJson(Array.get(o, i));
+            insert = insert.equals("") ? "null" : insert;
 
             jsonResult += "\n\t" + insert.replace("\n\t", "\n\t\t").replace("\n]", "\n\t]").replace("\n}", "\n\t}") + ",";
         }
@@ -205,26 +201,12 @@ public class JsonConverter {
         else
             return Array.newInstance(type, 0);
 
-        String[] stringValues;
-
-        if (type.isArray()) {
-            stringValues = json.split("(\\],\n\\[)");
-        }
-        else {
-            json = json.startsWith(",\n") ? " " + json : json;
-            json = json.endsWith(",\n") ? json + " " : json;
-
-            stringValues = json.split(",\n(?=[^\t])");//it was 2:26am :)
-        }
-
+        String[] stringValues = type.isArray() ? json.split("(\\],\n\\[)") : json.split(",\n(?=[^\t])");//it was 2:26am :)
         Object instance = Array.newInstance(type, stringValues.length);
 
         for (int i = 0; i < stringValues.length; i++) {
-            String stringValue = stringValues[i];
-
-            if (!stringValue.equals("") && !stringValue.equals(" ")){
-                Array.set(instance, i, fromJson(stringValue, type));
-            }
+            if (!stringValues[i].equals("null"))
+                Array.set(instance, i, fromJson(stringValues[i], type));
         }
 
         return instance;

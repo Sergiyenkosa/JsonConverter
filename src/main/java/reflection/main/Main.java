@@ -75,13 +75,13 @@ public class Main {
         objectLocaleDates[0][0][0] = LocalDate.MIN;
 
         String[] strings1 = new String[2];
-        strings1[1] = "fsdfasdg/\\\\\\";
+        strings1[1] = "";
 
         String[][] strings2 = new String[2][1];
         strings2[1][0] = "\"fgsgergergw3fg\f\"";
 
         int[] primitiveInts = new int[3];
-        primitiveInts[2] = Integer.MIN_VALUE;
+        primitiveInts[2] = 1;
 
         float[][] primitiveFloats = new float[3][2];
         primitiveFloats[2][1] = Float.MIN_VALUE;
@@ -96,7 +96,7 @@ public class Main {
         primitivesBoolean[2][2][1][0] = true;
 
         Long[][][][] wrapperLongs = new Long[3][3][3][3];
-        wrapperLongs[2][2][2][2] = Long.MIN_VALUE;
+        wrapperLongs[2][2][2][2] = 3L;
 
         Double[][][] wrapperDoubles = new Double[5][5][5];
         wrapperDoubles[0][0][0] = Double.MIN_VALUE;
@@ -122,6 +122,7 @@ public class Main {
         differentArrays.setPrimitivesBoolean(primitivesBoolean);
         differentArrays.setWrapperLongs(wrapperLongs);
         differentArrays.setWrapperDoubles(wrapperDoubles);
+        differentArrays.setWrapperCharacters(wrapperCharacters);
         differentArrays.setWrapperBooleans(wrapperBooleans);
         differentArrays.setEmptyArray(emptyArray);
 
@@ -130,11 +131,11 @@ public class Main {
         String jsonMarge = JsonConverter.toJson(merge1);
         System.out.println("_________________________ jsonMarge == _________________________\n" + jsonMarge);
 
-        Merge1 margeCopy = (Merge1) JsonConverter.fromJson(jsonMarge, Merge1.class);
-        String jsonMargeCopy = JsonConverter.toJson(margeCopy);
-        System.out.println("_________________________ jsonMargeCopy == _________________________\n" + jsonMargeCopy);
+        Thread.sleep(100);//for check private final String string2; (new Date().getTime()) in Strings class
 
-        System.out.println("___ Equals jsonMarge & jsonMargeCopy == " + jsonMarge.equals(jsonMargeCopy) + "!!! :) ___");
+        Merge1 marge1Copy = (Merge1) JsonConverter.fromJson(jsonMarge, Merge1.class);
+
+        System.out.println("___ Equals merge1 & marge1Copy == " + merge1.equals(marge1Copy) + "!!! :) ___");
 
         TheSameNames theSameNames = new TheSameNames();
         try {
