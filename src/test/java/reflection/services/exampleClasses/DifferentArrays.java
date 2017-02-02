@@ -1,4 +1,4 @@
-package reflection.exampleClasses;
+package reflection.services.exampleClasses;
 
 import java.time.LocalDate;
 import java.util.Arrays;

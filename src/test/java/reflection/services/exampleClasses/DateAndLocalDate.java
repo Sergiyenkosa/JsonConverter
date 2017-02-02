@@ -1,4 +1,4 @@
-package reflection.exampleClasses;
+package reflection.services.exampleClasses;
 
 import reflection.annotations.CustomDateFormat;
 import reflection.annotations.JsonValue;

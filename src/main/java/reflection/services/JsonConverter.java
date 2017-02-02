@@ -15,6 +15,17 @@ import static java.lang.reflect.Modifier.STATIC;
  * Created by s.sergienko on 22.12.2016.
  */
 public class JsonConverter {
+    private static Map<String, String> charsMap = new HashMap<>();
+    static {
+        charsMap.put("\"", "\"");
+        charsMap.put("/", "/");
+        charsMap.put("b", "\b");
+        charsMap.put("f", "\f");
+        charsMap.put("n", "\n");
+        charsMap.put("r", "\r");
+        charsMap.put("t", "\t");
+    }
+
     public static String toJson(Object o) throws NoSuchMethodException, IllegalAccessException {
         if (o == null){
             return "";
@@ -75,15 +86,6 @@ public class JsonConverter {
     }
 
     private static String convertToOriginalString(String jsonString) {
-        Map<String, String> charsMap = new HashMap<>();
-        charsMap.put("\"", "\"");
-        charsMap.put("/", "/");
-        charsMap.put("b", "\b");
-        charsMap.put("f", "\f");
-        charsMap.put("n", "\n");
-        charsMap.put("r", "\r");
-        charsMap.put("t", "\t");
-
         for (Map.Entry<String, String> entry : charsMap.entrySet()) {
             Pattern p = Pattern.compile("(^|^.*[^\\\\])(\\\\{2})*\\\\"+entry.getKey());//it was 4:51am :)
             Matcher m = p.matcher(jsonString);
@@ -196,10 +198,12 @@ public class JsonConverter {
             throws IllegalAccessException, NoSuchMethodException,
             InstantiationException, InvocationTargetException {
 
-        if (json.length() > 1)
+        if (json.length() > 1) {
             json = json.substring(2, json.length()-1).replaceAll("\n\t", "\n");
-        else
+        }
+        else {
             return Array.newInstance(type, 0);
+        }
 
         String[] stringValues = type.isArray() ? json.split("(\\],\n\\[)") : json.split(",\n(?=[^\t])");//it was 2:26am :)
         Object instance = Array.newInstance(type, stringValues.length);
