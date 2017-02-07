@@ -31,5 +31,5 @@
         </dependency>
     </dependencies>
 
-    <name>Reflection</name>
+    <name>JsonParser</name>
 </project>

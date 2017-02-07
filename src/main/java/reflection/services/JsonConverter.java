@@ -29,21 +29,16 @@ public class JsonConverter {
     public static String toJson(Object o) throws NoSuchMethodException, IllegalAccessException {
         if (o == null){
             return "";
-        }
-        else if (o instanceof String) {
+        } else if (o instanceof String) {
             return  convertToJsonString(o.toString());
-        }
-        else if (o instanceof Boolean || o instanceof Character || o instanceof Number) {
+        } else if (o instanceof Boolean || o instanceof Character || o instanceof Number) {
             return o instanceof Character ?
                     convertToJsonString(o.toString()).replaceAll("^\"", "'").replaceAll("\"$", "'") : o.toString();
-        }
-        else if (o.getClass().isArray()) {
+        } else if (o.getClass().isArray()) {
             return convertToJsonArray(o);
-        }
-        else if (o instanceof LocalDate){
+        } else if (o instanceof LocalDate){
             return "\"" + o.toString() + "\"";
-        }
-        else {
+        } else {
             o.getClass().getConstructor();//check for default constructor
 
             return convertToJsonObject(o);
@@ -57,20 +52,16 @@ public class JsonConverter {
 
         if (clazz == String.class) {
             return convertToOriginalString(json);
-        }
-        else if (ClassHandler.isTypePrimitiveOrPrimitiveWrapper(clazz)) {
+        } else if (ClassHandler.isTypePrimitiveOrPrimitiveWrapper(clazz)) {
             if (clazz == char.class || clazz == Character.class)
                 json = convertToOriginalString(json);
 
             return convertToOriginalPrimitiveOrWrapper(json, clazz);
-        }
-        else if (clazz.isArray()) {
+        } else if (clazz.isArray()) {
             return convertToOriginalArray(json, clazz.getComponentType());
-        }
-        else if (clazz == LocalDate.class) {
+        } else if (clazz == LocalDate.class) {
             return LocalDate.parse(json);
-        }
-        else {
+        } else {
             Object instance = clazz.newInstance();
 
             return convertToOriginalJsonObject(json, instance);
@@ -101,24 +92,33 @@ public class JsonConverter {
     }
 
     private static Object convertToOriginalPrimitiveOrWrapper(String jsonValueString, Class<?> type) {
-        if (type == boolean.class || type == Boolean.class)
+        if (type == boolean.class || type == Boolean.class) {
             return Boolean.valueOf(jsonValueString);
-        else if (type == char.class || type == Character.class)
+        }
+        else if (type == char.class || type == Character.class) {
             return jsonValueString.charAt(0);
-        else if (type == byte.class || type == Byte.class)
+        }
+        else if (type == byte.class || type == Byte.class) {
             return Byte.valueOf(jsonValueString);
-        else if (type == short.class || type == Short.class)
+        }
+        else if (type == short.class || type == Short.class) {
             return Short.valueOf(jsonValueString);
-        else if (type == int.class || type == Integer.class)
+        }
+        else if (type == int.class || type == Integer.class) {
             return Integer.valueOf(jsonValueString);
-        else if (type == long.class || type == Long.class)
+        }
+        else if (type == long.class || type == Long.class) {
             return Long.valueOf(jsonValueString);
-        else if (type == float.class || type == Float.class)
+        }
+        else if (type == float.class || type == Float.class) {
             return Float.valueOf(jsonValueString);
-        else if (type == double.class || type == Double.class)
+        }
+        else if (type == double.class || type == Double.class) {
             return Double.valueOf(jsonValueString);
-        else
+        }
+        else {
             throw new IllegalArgumentException();
+        }
     }
 
     private static String convertToJsonObject(Object o) throws NoSuchMethodException, IllegalAccessException {
@@ -140,8 +140,7 @@ public class JsonConverter {
                     String customLocalDate = localDate.format(DateTimeFormatter.ofPattern(customDateFormat.format()));
 
                     stringValue = "\"" + customLocalDate + "\"";
-                }
-                else {
+                } else {
                     stringValue = toJson(objectValue).replace("\n\t", "\n\t\t").replace("\n}", "\n\t}").replace("\n]", "\n\t]");
                 }
 
@@ -171,8 +170,7 @@ public class JsonConverter {
                     LocalDate localDate = LocalDate.parse(fieldValue, DateTimeFormatter.ofPattern(customDateFormat.format()));
 
                     field.set(instance, localDate);
-                }
-                else {
+                } else {
                     field.set(instance, fromJson(fieldValue, field.getType()));
                 }
             }
@@ -200,8 +198,7 @@ public class JsonConverter {
 
         if (json.length() > 1) {
             json = json.substring(2, json.length()-1).replaceAll("\n\t", "\n");
-        }
-        else {
+        } else {
             return Array.newInstance(type, 0);
         }
 
@@ -209,8 +206,9 @@ public class JsonConverter {
         Object instance = Array.newInstance(type, stringValues.length);
 
         for (int i = 0; i < stringValues.length; i++) {
-            if (!stringValues[i].equals("null"))
+            if (!stringValues[i].equals("null")) {
                 Array.set(instance, i, fromJson(stringValues[i], type));
+            }
         }
 
         return instance;

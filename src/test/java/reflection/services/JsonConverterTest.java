@@ -1,7 +1,9 @@
 package reflection.services;
 
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import reflection.services.exampleClasses.*;
 import reflection.exceptions.TheSameFieldAndJsonValueNamesInDifferentFieldsException;
 
@@ -15,6 +17,8 @@ import static org.junit.Assert.*;
  * Created by s.sergienko on 01.02.2017.
  */
 public class JsonConverterTest {
+    @Rule
+    public ExpectedException thrown= ExpectedException.none();
 
     @Test
     public void convertBooleanToJsonTest() throws Exception {
@@ -174,17 +178,49 @@ public class JsonConverterTest {
 
     @Test
     public void isEqualsObjectsBeforeToJsonAndAfterFromJsonTest() throws Exception {
-        DateAndLocalDate dateAndLocalDate = new DateAndLocalDate();
-        dateAndLocalDate.setLd1(LocalDate.of(1111, 1, 1));
-        dateAndLocalDate.setLd2(LocalDate.of(3333, 3, 3));
-        dateAndLocalDate.setDate(new Date(1));
+        // Given
+        Merge3 merge3 = new Merge3();
+        merge3.setStrings(getStringsObject());
+        merge3.setNulls(new Nulls());
 
-        Empty empty = new Empty();
+        Merge2 merge2 = new Merge2();
+        merge2.setMerge3(merge3);
+        merge2.setPrimitives(getPrimitivesObject());
+        merge2.setPrimitiveWrappers(getPrimitiveWrappersObject());
 
         Merge1 merge1 = new Merge1();
-        merge1.setDateAndLocalDate(dateAndLocalDate);
-        merge1.setEmpty(empty);
+        merge1.setMerge2(merge2);
+        merge1.setDateAndLocalDate(getDateAndLocalDateObject());
+        merge1.setEmpty(new Empty());
+        merge1.setDifferentArrays(getDifferentArraysObject(merge2,  merge3));
 
+        //When
+        String jsonMarge = JsonConverter.toJson(merge1);
+
+        Thread.sleep(100);//for check private final String string2; (new Date().getTime()) in Strings class
+
+        Merge1 marge1Copy = (Merge1) JsonConverter.fromJson(jsonMarge, Merge1.class);
+
+        //Then
+        assertEquals(merge1, marge1Copy);
+    }
+
+    @Test
+    public void checkTheSameFieldAndJsonValueNamesInDifferentFieldsExceptionTest() throws Exception {
+        thrown.expect(TheSameFieldAndJsonValueNamesInDifferentFieldsException.class);
+        thrown.expectMessage("Class: reflection.services.exampleClasses.TheSameNames, Name: s");
+        JsonConverter.toJson(new TheSameNames());
+    }
+
+    private Strings getStringsObject() {
+        Strings strings = new Strings();
+        strings.setString1("ass//gs\fg\"\"'}\\$\n\n\n\\\\\b");
+        strings.setString3("dfgdfg\n\b\r\txxdfg");
+
+        return strings;
+    }
+
+    private Primitives getPrimitivesObject() {
         Primitives primitives = new Primitives();
         primitives.setPrimitiveBoolean(true);
         primitives.setPrimitiveChar('\n');
@@ -195,6 +231,10 @@ public class JsonConverterTest {
         primitives.setPrimitiveFloat((float) 1.1);
         primitives.setPrimitiveDouble(1.2);
 
+        return primitives;
+    }
+
+    private PrimitiveWrappers getPrimitiveWrappersObject() {
         PrimitiveWrappers primitiveWrappers = new PrimitiveWrappers();
         primitiveWrappers.setWrapperBoolean(true);
         primitiveWrappers.setWrapperChar('\b');
@@ -205,54 +245,19 @@ public class JsonConverterTest {
         primitiveWrappers.setWrapperFloat((float) 1.3);
         primitiveWrappers.setWrapperDouble(1.4);
 
-        Merge2 merge2 = new Merge2();
-        merge2.setPrimitives(primitives);
-        merge2.setPrimitiveWrappers(primitiveWrappers);
+        return primitiveWrappers;
+    }
 
-        Strings strings = new Strings();
-        strings.setString1("ass//gs\fg\"\"'}\\$\n\n\n\\\\\b");
-        strings.setString3("dfgdfg\n\b\r\txxdfg");
+    private DateAndLocalDate getDateAndLocalDateObject() {
+        DateAndLocalDate dateAndLocalDate = new DateAndLocalDate();
+        dateAndLocalDate.setLd1(LocalDate.of(1111, 1, 1));
+        dateAndLocalDate.setLd2(LocalDate.of(3333, 3, 3));
+        dateAndLocalDate.setDate(new Date(1));
 
-        Nulls nulls = new Nulls();
+        return dateAndLocalDate;
+    }
 
-        Merge3 merge3 = new Merge3();
-        merge3.setStrings(strings);
-        merge3.setNulls(nulls);
-
-        merge2.setMerge3(merge3);
-
-        merge1.setMerge2(merge2);
-
-        DifferentArrays differentArrays = new DifferentArrays();
-
-        Merge2[] objectMerge2s = new Merge2[1];
-        objectMerge2s[0] = merge2;
-
-        Merge3[][] objectMerge3s = new Merge3[1][2];
-        objectMerge3s[0][0] = merge3;
-        objectMerge3s[0][1] = merge3;
-
-        LocalDate[][][] objectLocaleDates = new LocalDate[1][2][3];
-        objectLocaleDates[0][0][0] = LocalDate.MIN;
-
-        String[] strings1 = new String[2];
-        strings1[1] = "";
-
-        String[][] strings2 = new String[2][1];
-        strings2[1][0] = "\"fgsgergergw3fg\f\"";
-
-        int[] primitiveInts = new int[3];
-        primitiveInts[2] = 1;
-
-        float[][] primitiveFloats = new float[3][2];
-        primitiveFloats[2][1] = Float.MIN_VALUE;
-        primitiveFloats[1][0] = Float.MAX_VALUE;
-
-        char[][][] primitiveChars = new char[3][2][1];
-        primitiveChars[0][0][0] = 'a';
-        primitiveChars[1][1][0] = 'b';
-        primitiveChars[2][1][0] = 'c';
-
+    private DifferentArrays getDifferentArraysObject(Merge2 merge2, Merge3 merge3) {
         boolean[][][][] primitivesBoolean = new boolean[4][3][2][1];
         primitivesBoolean[2][2][1][0] = true;
 
@@ -264,47 +269,22 @@ public class JsonConverterTest {
         wrapperDoubles[2][2][2] = 0.0;
         wrapperDoubles[4][4][4] = Double.MAX_VALUE;
 
-        Character[][] wrapperCharacters = new Character[1][3];
-        wrapperCharacters[0][2] = '1';
-
-        Boolean [] wrapperBooleans = new Boolean[3];
-        wrapperBooleans[1] = false;
-
-        Object [][][] emptyArray = new Object[0][1][2];
-
-        differentArrays.setObjectMerge2s(objectMerge2s);
-        differentArrays.setObjectMerge3s(objectMerge3s);
-        differentArrays.setObjectLocaleDates(objectLocaleDates);
-        differentArrays.setStrings1(strings1);
-        differentArrays.setStrings2(strings2);
-        differentArrays.setPrimitiveInts(primitiveInts);
-        differentArrays.setPrimitiveFloats(primitiveFloats);
-        differentArrays.setPrimitiveChars(primitiveChars);
+        DifferentArrays differentArrays = new DifferentArrays();
+        differentArrays.setObjectMerge2s(new Merge2[]{merge2,null});
+        differentArrays.setObjectMerge3s(new Merge3[][]{{merge3, merge3}});
+        differentArrays.setObjectLocaleDates(new LocalDate[][][]{{{LocalDate.MIN, null, null},{null, null, null}}});
+        differentArrays.setStrings1(new String[]{null, ""});
+        differentArrays.setStrings2(new String[][]{{null}, {"\"fgsgergergw3fg\f\""}});
+        differentArrays.setPrimitiveInts(new int[]{0, 0, 1});
+        differentArrays.setPrimitiveFloats(new float[][]{{0, 0}, {Float.MAX_VALUE, 0}, {0, Float.MIN_VALUE}});
+        differentArrays.setPrimitiveChars(new char[][][]{{{'a'}, {'\u0000'}}, {{'\u0000'}, {'b'}}, {{'\u0000'}, {'c'}}});
         differentArrays.setPrimitivesBoolean(primitivesBoolean);
         differentArrays.setWrapperLongs(wrapperLongs);
         differentArrays.setWrapperDoubles(wrapperDoubles);
-        differentArrays.setWrapperCharacters(wrapperCharacters);
-        differentArrays.setWrapperBooleans(wrapperBooleans);
-        differentArrays.setEmptyArray(emptyArray);
+        differentArrays.setWrapperCharacters(new Character[][]{{null, null, '1'}});
+        differentArrays.setWrapperBooleans(new Boolean[]{null, false, null});
+        differentArrays.setEmptyArray(new Object[0][1][2]);
 
-        merge1.setDifferentArrays(differentArrays);
-
-        String jsonMarge = JsonConverter.toJson(merge1);
-
-        Thread.sleep(100);//for check private final String string2; (new Date().getTime()) in Strings class
-
-        Merge1 marge1Copy = (Merge1) JsonConverter.fromJson(jsonMarge, Merge1.class);
-
-        assertEquals(merge1, marge1Copy);
-    }
-
-    @Test
-    public void checkTheSameFieldAndJsonValueNamesInDifferentFieldsExceptionTest() throws Exception {
-        try {
-            JsonConverter.toJson(new TheSameNames());
-        }
-        catch (TheSameFieldAndJsonValueNamesInDifferentFieldsException e) {
-            assertThat(e.getMessage(), is("Class: reflection.services.exampleClasses.TheSameNames, Name: s"));
-        }
+        return differentArrays;
     }
 }

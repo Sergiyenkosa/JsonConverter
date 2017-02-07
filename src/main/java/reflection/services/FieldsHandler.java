@@ -19,10 +19,11 @@ public class FieldsHandler {
             JsonValue jsonValue = field.getAnnotation(JsonValue.class);
             String name = jsonValue != null ? jsonValue.name() : field.getName();
 
-            if (jsonFieldsMap.containsKey(name))
+            if (jsonFieldsMap.containsKey(name)) {
                 throw new TheSameFieldAndJsonValueNamesInDifferentFieldsException(o.getClass(), name);
-            else
+            } else {
                 jsonFieldsMap.put(name, field);
+            }
         }
 
         return jsonFieldsMap;
