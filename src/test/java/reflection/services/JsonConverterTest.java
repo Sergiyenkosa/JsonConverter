@@ -1,9 +1,11 @@
 package reflection.services;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import reflection.exceptions.IllegalJsonValueNameException;
 import reflection.services.exampleClasses.*;
 import reflection.exceptions.TheSameFieldAndJsonValueNamesInDifferentFieldsException;
 
@@ -17,6 +19,13 @@ import static org.junit.Assert.*;
  * Created by s.sergienko on 01.02.2017.
  */
 public class JsonConverterTest {
+    private String lS;
+
+    @Before
+    public void initializeLineSeparator() {
+        lS = System.lineSeparator();
+    }
+
     @Rule
     public ExpectedException thrown= ExpectedException.none();
 
@@ -32,22 +41,22 @@ public class JsonConverterTest {
 
     @Test
     public void createWrapperBooleanFromJsonTest() throws Exception {
-        Assert.assertSame((Boolean)JsonConverter.fromJson("true", Boolean.class), true);
+        Assert.assertSame(JsonConverter.fromJson("true", Boolean.class), true);
     }
 
     @Test
     public void convertCharToJsonTest() throws Exception {
-        Assert.assertThat(JsonConverter.toJson('\f'), is("'\\f'"));
+        Assert.assertThat(JsonConverter.toJson('\f'), is("\"\\f\""));
     }
 
     @Test
     public void createPrimitiveCharFromJsonTest() throws Exception {
-        Assert.assertThat(JsonConverter.fromJson("'\\r'", char.class), is('\r'));
+        Assert.assertThat(JsonConverter.fromJson("\"\\r\"", char.class), is('\r'));
     }
 
     @Test
     public void createWrapperCharFromJsonTest() throws Exception {
-        Assert.assertThat(JsonConverter.fromJson("'\\n'", Character.class), is('\n'));
+        Assert.assertThat(JsonConverter.fromJson("\"\\n\"", Character.class), is('\n'));
     }
 
     @Test
@@ -142,37 +151,37 @@ public class JsonConverterTest {
 
     @Test
     public void convertPrimitivesArrayToJsonTest() throws Exception {
-        Assert.assertThat(JsonConverter.toJson(new int[]{1,2,3}), is("[\n\t1,\n\t2,\n\t3\n]"));
+        Assert.assertThat(JsonConverter.toJson(new int[]{1,2,3}), is("[1,2,3]"));
     }
 
     @Test
     public void createPrimitivesArrayFromJsonTest() throws Exception {
         Assert.assertArrayEquals((boolean[]) JsonConverter.fromJson(
-                "[\n\ttrue,\n\tfalse,\n\ttrue\n]", boolean[].class), new boolean[]{true,false,true});
+                "[true,false,true]", boolean[].class), new boolean[]{true,false,true});
     }
 
     @Test
     public void convertWrappersMultidimensionalArrayToJsonTest() throws Exception {
         Assert.assertThat(JsonConverter.toJson(new Double[][]{{5.5, 3.3}, {1.1}}),
-                is("[\n\t[\n\t\t5.5,\n\t\t3.3\n\t],\n\t[\n\t\t1.1\n\t]\n]"));
+                is("[[5.5,3.3],[1.1]]"));
     }
 
     @Test
     public void createWrappersMultidimensionalArrayFromJsonTest() throws Exception {
         Assert.assertArrayEquals((Character[]) JsonConverter.fromJson(
-                "[\n\t'm',\n\t'\\n',\n\t'o'\n]", Character[].class), new Character[]{'m','\n','o'});
+                "[\"m\",\"\\n\",\"o\"]", Character[].class), new Character[]{'m','\n','o'});
     }
 
     @Test
     public void convertObjectArrayToJsonTest() throws Exception {
         Assert.assertThat(JsonConverter.toJson(new LocalDate[]{LocalDate.MIN}),
-                is("[\n\t\"-999999999-01-01\"\n]"));
+                is("[\"-999999999-01-01\"]"));
     }
 
     @Test
     public void createObjectMultidimensionalArrayFromJsonTest() throws Exception {
         Assert.assertArrayEquals((Date[][]) JsonConverter.fromJson(
-                "[\n\t[\n\t\t{\n\t\t\t\"fastTime\": 1\n\t\t}\n\t],\n\t[\n\t\t{\n\t\t\t\"fastTime\": 3\n\t\t}\n\t]\n]",
+                "[[{\"fastTime\":1}],[{\"fastTime\":3}]]",
                 Date[][].class), new Date[][]{{new Date(1)}, {new Date(3)}});
     }
 
@@ -206,10 +215,67 @@ public class JsonConverterTest {
     }
 
     @Test
+    public void convertPrimitiveIntsArrayJsonToReadableViewTest() throws Exception {
+        Assert.assertThat(JsonConverter.convertJsonToReadableView("[3,2,1]"),
+                is(String.format("[%s\t3,%s\t2,%s\t1%s]", lS, lS, lS, lS)));
+    }
+
+    @Test
+    public void convertPrimitiveBooleansArrayJsonToReadableViewTest() throws Exception {
+        Assert.assertThat(JsonConverter.convertJsonToReadableView("[false,true,false]"),
+                is(String.format("[%s\tfalse,%s\ttrue,%s\tfalse%s]", lS, lS, lS, lS)));
+    }
+
+    @Test
+    public void convertWrapperDoublesMultidimensionalArrayJsonToReadableViewTest() throws Exception {
+        Assert.assertThat(JsonConverter.convertJsonToReadableView("[[5.5,3.3],[1.1]]"),
+                is(String.format("[%s\t[%s\t\t5.5,%s\t\t3.3%s\t],%s\t[%s\t\t1.1%s\t]%s]",
+                        lS ,lS, lS, lS, lS, lS, lS, lS)));
+    }
+
+    @Test
+    public void convertWrapperCharactersMultidimensionalArrayJsonToReadableViewTest() throws Exception {
+        Assert.assertThat(JsonConverter.convertJsonToReadableView("[\"o\",\"\\n\",\"m\"]"),
+                is(String.format("[%s\t\"o\",%s\t\"\\n\",%s\t\"m\"%s]", lS, lS, lS, lS)));
+    }
+
+    @Test
+    public void convertObjectArrayJsonToReadableViewTest() throws Exception {
+        Assert.assertThat(JsonConverter.convertJsonToReadableView("[\"-999999999-01-01\"]"),
+                is(String.format("[%s\t\"-999999999-01-01\"%s]", lS, lS)));
+    }
+
+    @Test
+    public void convertObjectMultidimensionalArrayJsonToReadableViewTest() throws Exception {
+        Assert.assertThat(JsonConverter.convertJsonToReadableView("[[{\"fastTime\":3}],[{\"fastTime\":1}]]"),
+                is(String.format("[%s\t[%s\t\t{%s\t\t\t\"fastTime\": 3%s\t\t}%s\t]," +
+                                "%s\t[%s\t\t{%s\t\t\t\"fastTime\": 1%s\t\t}%s\t]%s]",
+                        lS, lS, lS, lS, lS, lS, lS, lS, lS, lS, lS)));
+    }
+
+    @Test
+    public void convertStringsObjectJsonToReadableViewTest() throws Exception {
+        Assert.assertThat(JsonConverter.convertJsonToReadableView("{\"a\":\"1487232231611\"," +
+                        "\"b\":\"ass\\/\\/gs\\fg\\\"\\\"'}\\\\$\\n\\n\\n\\\\\\\\\\b\"," +
+                        "\"c\":\"dfgdfg\\n\\b\\r\\txxdfg\"}"),
+                is(String.format("{%s\t\"a\": \"1487232231611\"," +
+                                "%s\t\"b\": \"ass\\/\\/gs\\fg\\\"\\\"'}\\\\$\\n\\n\\n\\\\\\\\\\b\"," +
+                                "%s\t\"c\": \"dfgdfg\\n\\b\\r\\txxdfg\"%s}",
+                        lS, lS, lS, lS)));
+    }
+
+    @Test
     public void checkTheSameFieldAndJsonValueNamesInDifferentFieldsExceptionTest() throws Exception {
         thrown.expect(TheSameFieldAndJsonValueNamesInDifferentFieldsException.class);
         thrown.expectMessage("Class: reflection.services.exampleClasses.TheSameNames, Name: s");
         JsonConverter.toJson(new TheSameNames());
+    }
+
+    @Test
+    public void checkIllegalJsonValueNameExceptionTest() throws Exception {
+        thrown.expect(IllegalJsonValueNameException.class);
+        thrown.expectMessage("Class: reflection.services.exampleClasses.IllegalName, Name: @");
+        JsonConverter.toJson(new IllegalName());
     }
 
     private Strings getStringsObject() {

@@ -1,6 +1,7 @@
 package reflection.services;
 
 import reflection.annotations.JsonValue;
+import reflection.exceptions.IllegalJsonValueNameException;
 import reflection.exceptions.TheSameFieldAndJsonValueNamesInDifferentFieldsException;
 
 import java.lang.reflect.Field;
@@ -19,7 +20,9 @@ public class FieldsHandler {
             JsonValue jsonValue = field.getAnnotation(JsonValue.class);
             String name = jsonValue != null ? jsonValue.name() : field.getName();
 
-            if (jsonFieldsMap.containsKey(name)) {
+            if (name.matches(".*[^\\w].*")) {
+                throw new IllegalJsonValueNameException(o.getClass(), name);
+            } if (jsonFieldsMap.containsKey(name)) {
                 throw new TheSameFieldAndJsonValueNamesInDifferentFieldsException(o.getClass(), name);
             } else {
                 jsonFieldsMap.put(name, field);

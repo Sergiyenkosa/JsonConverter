@@ -15,7 +15,7 @@ import static java.lang.reflect.Modifier.STATIC;
  * Created by s.sergienko on 22.12.2016.
  */
 public class JsonConverter {
-    private static Map<String, String> charsMap = new HashMap<>();
+    private final static Map<String, String> charsMap = new HashMap<>();
     static {
         charsMap.put("\"", "\"");
         charsMap.put("/", "/");
@@ -33,7 +33,7 @@ public class JsonConverter {
             return  convertToJsonString(o.toString());
         } else if (o instanceof Boolean || o instanceof Character || o instanceof Number) {
             return o instanceof Character ?
-                    convertToJsonString(o.toString()).replaceAll("^\"", "'").replaceAll("\"$", "'") : o.toString();
+                    convertToJsonString(o.toString()) : o.toString();
         } else if (o.getClass().isArray()) {
             return convertToJsonArray(o);
         } else if (o instanceof LocalDate){
@@ -46,9 +46,28 @@ public class JsonConverter {
     }
 
     public static Object fromJson(String json, Class<?> clazz)
+            throws InvocationTargetException, NoSuchMethodException,
+            InstantiationException, IllegalAccessException {
+
+        if (json.startsWith("{") || json.startsWith("[")) {
+            if (json.matches("^.*?[:\\[]\"(([\\\\]{2})*?|(.*?[^\\\\]([\\\\]{2})*?))\".*?$")) {
+                json = convertToEaseParsingJsonWithStrings(json, "\n");
+            } else {
+                json = convertToEaseParsingJsonWithoutStrings(json, "\n");
+            }
+        }
+
+        return fromJsonRecursion(json, clazz);
+    }
+
+    public static String convertJsonToReadableView(String json) {
+        return convertToEaseParsingJsonWithStrings(json, System.lineSeparator());
+    }
+
+    private static Object fromJsonRecursion(String json, Class<?> clazz)
             throws IllegalAccessException, InstantiationException,
             NoSuchMethodException, InvocationTargetException {
-        json = json.replaceAll("^(\"|\'|\\[|\\{)", "").replaceAll("(\"|\'|\\]|\\})$", "");
+        json = json.replaceAll("^[\"\\[{]", "").replaceAll("[\"\\]}]$", "");
 
         if (clazz == String.class) {
             return convertToOriginalString(json);
@@ -66,6 +85,59 @@ public class JsonConverter {
 
             return convertToOriginalJsonObject(json, instance);
         }
+    }
+
+    private static String convertToEaseParsingJsonWithStrings(String json, String separator) {
+        Map<String, String> stringsMap = new TreeMap<>();
+
+        Pattern pattern = Pattern.compile("(?<=[:\\[])\"(([\\\\]{2})*?|(.*?[^\\\\]([\\\\]{2})*?))\"");//find oll strings ore chars in json
+        Matcher matcher = pattern.matcher(json);
+
+        while (matcher.find()){
+            final String mapKey = "/" + stringsMap.size() + "/";
+
+            stringsMap.put(mapKey, matcher.group());
+
+            json = json.replaceFirst(pattern.pattern(), mapKey);
+
+            matcher = pattern.matcher(json);
+        }
+
+        json = convertToEaseParsingJsonWithoutStrings(json, separator);
+
+        for (Map.Entry<String, String> entry : stringsMap.entrySet()) {
+            json = json.replace(entry.getKey(), entry.getValue());
+        }
+
+        return json;
+    }
+
+    private static String convertToEaseParsingJsonWithoutStrings(String json, String separator) {
+        Pattern pattern = Pattern.compile("((\\{|\\[|(?<![}|\\]]),)|(\t?(}(?!,)|},|](?!,)|],)))(?!" + separator + ")");
+        Matcher matcher = pattern.matcher(json);
+
+        StringBuilder tabs = new StringBuilder();
+
+        while (matcher.find()){
+            String s = matcher.group();
+
+            if (s.matches("[{\\[]")) {
+                tabs.append("\t");
+                json = json.replaceFirst(pattern.pattern(), s + separator + tabs);
+            } else if (s.matches("(?<![}\\]]),")) {
+                json = json.replaceFirst(pattern.pattern(), s + separator + tabs);
+            }else if (s.matches("(\t)[}\\]],?")){
+                tabs = new StringBuilder(tabs.toString().replaceFirst("\t", ""));
+                json = json.replaceFirst(pattern.pattern(), s.substring(1) + separator + tabs);
+            } else {
+                tabs = new StringBuilder(tabs.toString().replaceFirst("\t", ""));
+                json = json.replaceFirst(pattern.pattern(), separator + tabs + s + separator + tabs);
+            }
+
+            matcher = pattern.matcher(json);
+        }
+
+        return json.substring(0, json.length() - separator.length()).replaceAll(":", ": ");
     }
 
     private static String convertToJsonString(String originalString) {
@@ -94,35 +166,27 @@ public class JsonConverter {
     private static Object convertToOriginalPrimitiveOrWrapper(String jsonValueString, Class<?> type) {
         if (type == boolean.class || type == Boolean.class) {
             return Boolean.valueOf(jsonValueString);
-        }
-        else if (type == char.class || type == Character.class) {
+        } else if (type == char.class || type == Character.class) {
             return jsonValueString.charAt(0);
-        }
-        else if (type == byte.class || type == Byte.class) {
+        } else if (type == byte.class || type == Byte.class) {
             return Byte.valueOf(jsonValueString);
-        }
-        else if (type == short.class || type == Short.class) {
+        } else if (type == short.class || type == Short.class) {
             return Short.valueOf(jsonValueString);
-        }
-        else if (type == int.class || type == Integer.class) {
+        } else if (type == int.class || type == Integer.class) {
             return Integer.valueOf(jsonValueString);
-        }
-        else if (type == long.class || type == Long.class) {
+        } else if (type == long.class || type == Long.class) {
             return Long.valueOf(jsonValueString);
-        }
-        else if (type == float.class || type == Float.class) {
+        } else if (type == float.class || type == Float.class) {
             return Float.valueOf(jsonValueString);
-        }
-        else if (type == double.class || type == Double.class) {
+        } else if (type == double.class || type == Double.class) {
             return Double.valueOf(jsonValueString);
-        }
-        else {
+        } else {
             throw new IllegalArgumentException();
         }
     }
 
     private static String convertToJsonObject(Object o) throws NoSuchMethodException, IllegalAccessException {
-        String jsonResult = "{";
+        StringBuilder jsonResult = new StringBuilder("{");
 
         for (Map.Entry<String, Field> entry : FieldsHandler.getDeclaredFieldsMap(o).entrySet()) {
             Field field = entry.getValue();
@@ -141,14 +205,14 @@ public class JsonConverter {
 
                     stringValue = "\"" + customLocalDate + "\"";
                 } else {
-                    stringValue = toJson(objectValue).replace("\n\t", "\n\t\t").replace("\n}", "\n\t}").replace("\n]", "\n\t]");
+                    stringValue = toJson(objectValue);
                 }
 
-                jsonResult += String.format("\n\t\"%s\": %s,", entry.getKey(), stringValue);
+                jsonResult.append(String.format("\"%s\":%s,", entry.getKey(), stringValue));
             }
         }
 
-        return jsonResult.endsWith(",") ? jsonResult.substring(0, jsonResult.length()-1) + "\n}" : jsonResult + "\n}";
+        return jsonResult.toString().endsWith(",") ? jsonResult.substring(0, jsonResult.length()-1) + "}" : jsonResult + "}";
     }
 
     private static Object convertToOriginalJsonObject(String json, Object instance)
@@ -171,7 +235,7 @@ public class JsonConverter {
 
                     field.set(instance, localDate);
                 } else {
-                    field.set(instance, fromJson(fieldValue, field.getType()));
+                    field.set(instance, fromJsonRecursion(fieldValue, field.getType()));
                 }
             }
         }
@@ -180,16 +244,16 @@ public class JsonConverter {
     }
 
     private static String convertToJsonArray(Object o) throws NoSuchMethodException, IllegalAccessException {
-        String jsonResult = "[";
+        StringBuilder jsonResult = new StringBuilder("[");
 
         for (int i = 0;i < Array.getLength(o); i++) {
             String insert = toJson(Array.get(o, i));
             insert = insert.equals("") ? "null" : insert;
 
-            jsonResult += "\n\t" + insert.replace("\n\t", "\n\t\t").replace("\n]", "\n\t]").replace("\n}", "\n\t}") + ",";
+            jsonResult.append(insert).append(",");
         }
 
-        return jsonResult.endsWith(",") ? jsonResult.substring(0, jsonResult.length()-1) + "\n]": jsonResult + "\n]";
+        return jsonResult.toString().endsWith(",") ? jsonResult.substring(0, jsonResult.length()-1) + "]": jsonResult + "]";
     }
 
     private static Object convertToOriginalArray(String json, Class<?> type)
@@ -207,7 +271,7 @@ public class JsonConverter {
 
         for (int i = 0; i < stringValues.length; i++) {
             if (!stringValues[i].equals("null")) {
-                Array.set(instance, i, fromJson(stringValues[i], type));
+                Array.set(instance, i, fromJsonRecursion(stringValues[i], type));
             }
         }
 
